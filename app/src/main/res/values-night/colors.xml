@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_green">#81C784</color>
+    <color name="primary_green_dark">#388E3C</color>
+    <color name="primary_green_light">#A5D6A7</color>
+    <color name="accent_green">#69F0AE</color>
+    <color name="secondary_green">#00BFA5</color>
+    <color name="background_light">#121212</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B3FFFFFF</color>
+    
+    <!-- Required colors for night theme -->
+    <color name="purple_200">#81C784</color>
+    <color name="purple_500">#4CAF50</color>
+    <color name="purple_700">#388E3C</color>
+    <color name="teal_200">#69F0AE</color>
+    <color name="teal_700">#00BFA5</color>
+</resources> 
