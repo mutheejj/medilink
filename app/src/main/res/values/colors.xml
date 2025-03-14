@@ -18,6 +18,10 @@
     <color name="primary_dark_green">#388E3C</color>
     <color name="light_green">#A5D6A7</color>
 
+    <!-- Bed status colors -->
+    <color name="bed_occupied">#FF5252</color>
+    <color name="bed_available">#4CAF50</color>
+
     <!-- Add indicator colors -->
     <color name="selected_indicator_color">@color/green_500</color>
     <color name="unselected_indicator_color">@color/green_200</color>
