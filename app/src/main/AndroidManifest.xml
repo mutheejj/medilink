@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.medilink">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".MedilinkApplication"
         android:allowBackup="true"
@@ -27,7 +29,9 @@
         <activity
             android:name=".OnboardingActivity"
             android:exported="false"/>
-        <activity android:name=".HomeActivity" />
+        <activity
+            android:name=".activities.HomeActivity"
+            android:exported="false" />
 
         <activity
             android:name=".WelcomeActivity"
@@ -43,6 +47,22 @@
 
         <activity
             android:name=".ForgotPasswordActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.ProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.BedManagementActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.AppointmentsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".MainActivity"
             android:exported="false" />
 
     </application>

@@ -5,15 +5,27 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.example.medilink.models.Staff;
+import com.google.firebase.auth.UserProfileChangeRequest;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class AuthService {
     private static AuthService instance;
     private FirebaseAuth firebaseAuth;
     private DatabaseReference databaseReference;
+    private static final int MAX_LOGIN_ATTEMPTS = 5;
+    private static final long LOCKOUT_DURATION = 300000; // 5 minutes in milliseconds
+    private Map<String, Integer> loginAttempts;
+    private Map<String, Long> lockoutTimes;
 
     private AuthService() {
         firebaseAuth = FirebaseAuth.getInstance();
-        databaseReference = FirebaseDatabase.getInstance().getReference();
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        database.setPersistenceEnabled(true);
+        databaseReference = database.getReference();
+        loginAttempts = new HashMap<>();
+        lockoutTimes = new HashMap<>();
     }
 
     public static synchronized AuthService getInstance() {
@@ -26,16 +38,22 @@ public class AuthService {
     public interface AuthCallback {
         void onSuccess();
         void onError(String error);
+        void onLoading(boolean isLoading);
+        void onEmailVerificationRequired();
     }
 
     public void registerStaff(String email, String password, String name, String role, final AuthCallback callback) {
+        callback.onLoading(true);
+        
         if (!isValidEmail(email)) {
-            callback.onError("Invalid email format");
+            callback.onLoading(false);
+            callback.onError("Please enter a valid email address");
             return;
         }
 
         if (!isValidPassword(password)) {
-            callback.onError("Password must be at least 6 characters and contain at least one number");
+            callback.onLoading(false);
+            callback.onError("Password must be at least 6 characters long and contain at least one number");
             return;
         }
 
@@ -53,19 +71,35 @@ public class AuthService {
                                     databaseReference.child("staff").child(userId).setValue(staff)
                                             .addOnSuccessListener(aVoid -> {
                                                 sendVerificationEmail(user);
-                                                callback.onSuccess();
+                                                callback.onLoading(false);
+                                                callback.onEmailVerificationRequired();
                                             })
-                                            .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                                            .addOnFailureListener(e -> {
+                                                callback.onLoading(false);
+                                                callback.onError("Failed to create user profile: " + e.getMessage());
+                                            });
                                 });
                     } else {
                         callback.onError(task.getException() != null ? 
                                 task.getException().getMessage() : "Registration failed");
+                    }
                 });
     }
 
     public void loginStaff(String email, String password, final AuthCallback callback) {
+        callback.onLoading(true);
+        
         if (!isValidEmail(email)) {
-            callback.onError("Invalid email format");
+            callback.onLoading(false);
+            callback.onError("Please enter a valid email address");
+            return;
+        }
+
+        if (isUserLockedOut(email)) {
+            callback.onLoading(false);
+            long remainingTime = getRemainingLockoutTime(email);
+            callback.onError("Too many login attempts. Please try again in " + 
+                (remainingTime / 60000) + " minutes");
             return;
         }
 
@@ -74,18 +108,45 @@ public class AuthService {
                     if (task.isSuccessful() && task.getResult().getUser() != null) {
                         FirebaseUser user = task.getResult().getUser();
                         if (!user.isEmailVerified()) {
-                            callback.onError("Please verify your email first");
+                            sendVerificationEmail(user);
+                            callback.onLoading(false);
+                            callback.onEmailVerificationRequired();
                             return;
                         }
+                        
+                        // Reset login attempts on successful login
+                        resetLoginAttempts(email);
                         
                         String userId = user.getUid();
                         databaseReference.child("staff").child(userId)
                                 .child("lastActive").setValue(System.currentTimeMillis())
-                                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                                .addOnSuccessListener(aVoid -> {
+                                    // Keep a local cache of the last active time
+                                    databaseReference.child("staff").child(userId).keepSynced(true);
+                                    callback.onSuccess();
+                                })
+                                .addOnFailureListener(e -> {
+                                    // If database update fails, still allow login but log the error
+                                    android.util.Log.w("AuthService", "Failed to update lastActive: " + e.getMessage());
+                                    callback.onSuccess();
+                                });
                     } else {
-                        callback.onError(task.getException() != null ? 
-                                task.getException().getMessage() : "Login failed");
+                        String errorMessage = task.getException() != null ? 
+                                task.getException().getMessage() : "Invalid email or password";
+                        android.util.Log.e("AuthService", "Login failed: " + errorMessage);
+                        
+                        // Increment login attempts
+                        incrementLoginAttempts(email);
+                        
+                        callback.onLoading(false);
+                        if (getLoginAttempts(email) >= MAX_LOGIN_ATTEMPTS) {
+                            lockoutUser(email);
+                            callback.onError("Too many failed attempts. Account locked for 5 minutes");
+                        } else {
+                            callback.onError("Invalid credentials. " + 
+                                (MAX_LOGIN_ATTEMPTS - getLoginAttempts(email)) + " attempts remaining");
+                        }
+                    }
                 });
     }
 
@@ -113,6 +174,37 @@ public class AuthService {
 
     private boolean isValidPassword(String password) {
         return password != null && password.length() >= 6 && password.matches(".*\\d.*");
+    }
+
+    private void incrementLoginAttempts(String email) {
+        int attempts = loginAttempts.getOrDefault(email, 0) + 1;
+        loginAttempts.put(email, attempts);
+    }
+
+    private void resetLoginAttempts(String email) {
+        loginAttempts.remove(email);
+        lockoutTimes.remove(email);
+    }
+
+    private int getLoginAttempts(String email) {
+        return loginAttempts.getOrDefault(email, 0);
+    }
+
+    private void lockoutUser(String email) {
+        lockoutTimes.put(email, System.currentTimeMillis());
+    }
+
+    private boolean isUserLockedOut(String email) {
+        Long lockoutTime = lockoutTimes.get(email);
+        if (lockoutTime == null) return false;
+        return System.currentTimeMillis() - lockoutTime < LOCKOUT_DURATION;
+    }
+
+    private long getRemainingLockoutTime(String email) {
+        Long lockoutTime = lockoutTimes.get(email);
+        if (lockoutTime == null) return 0;
+        long remainingTime = LOCKOUT_DURATION - (System.currentTimeMillis() - lockoutTime);
+        return Math.max(0, remainingTime);
     }
 
     public void resetPassword(String email, final AuthCallback callback) {

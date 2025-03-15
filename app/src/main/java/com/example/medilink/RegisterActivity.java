@@ -43,19 +43,27 @@ public class RegisterActivity extends AppCompatActivity {
             // Show loading state
             btnRegister.setEnabled(false);
             btnRegister.setText("Creating Account...");
+            findViewById(R.id.progressIndicator).setVisibility(android.view.View.VISIBLE);
+            
+            // Disable all input fields
+            fullNameInput.setEnabled(false);
+            emailInput.setEnabled(false);
+            passwordInput.setEnabled(false);
+            confirmPasswordInput.setEnabled(false);
             
             authService.registerStaff(email, password, fullName, "staff", new AuthService.AuthCallback() {
                 @Override
                 public void onSuccess() {
                     runOnUiThread(() -> {
                         Toast.makeText(RegisterActivity.this, 
-                            "Registration successful! Please check your email for verification.", 
-                            Toast.LENGTH_LONG).show();
-                        // Return to login screen after registration
+                            "Account created successfully!", 
+                            Toast.LENGTH_SHORT).show();
+                        
+                        // Navigate to login screen immediately
                         Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
-                        finish();
+                        finish(); // Finish current activity
                     });
                 }
                 
@@ -64,8 +72,30 @@ public class RegisterActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         btnRegister.setEnabled(true);
                         btnRegister.setText("Create Account");
-                        Toast.makeText(RegisterActivity.this, error, Toast.LENGTH_LONG).show();
+                        findViewById(R.id.progressIndicator).setVisibility(android.view.View.GONE);
+                        
+                        // Re-enable all input fields
+                        fullNameInput.setEnabled(true);
+                        emailInput.setEnabled(true);
+                        passwordInput.setEnabled(true);
+                        confirmPasswordInput.setEnabled(true);
+                        
+                        Toast.makeText(RegisterActivity.this, "Failed to create account: " + error, Toast.LENGTH_LONG).show();
                     });
+                }
+                
+                @Override
+                public void onLoading(boolean isLoading) {
+                    runOnUiThread(() -> {
+                        btnRegister.setEnabled(!isLoading);
+                        btnRegister.setText(isLoading ? "Creating Account..." : "Create Account");
+                    });
+                }
+
+                @Override
+                public void onEmailVerificationRequired() {
+                    // Ignore email verification, proceed with success
+                    onSuccess();
                 }
             });
         }
@@ -106,8 +136,6 @@ public class RegisterActivity extends AppCompatActivity {
             isValid = false;
         }
         
-        return isValid
-        
-        return true;
+        return isValid;
     }
 }

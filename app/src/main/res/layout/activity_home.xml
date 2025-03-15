@@ -26,15 +26,17 @@
                     android:layout_height="wrap_content"
                     android:text="Welcome back, Xavier"
                     android:textColor="@color/white"
-                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+                    android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                    android:alpha="0.9" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Find Your Doctor"
                     android:textColor="@color/white"
-                    android:textAppearance="?attr/textAppearanceHeadlineMedium"
-                    android:textStyle="bold" />
+                    android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                    android:textStyle="bold"
+                    android:layout_marginTop="8dp" />
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
@@ -109,7 +111,18 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="Appointments"
-                            android:textAppearance="?attr/textAppearanceTitleMedium" />
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="@color/black" />
+
+                        <TextView
+                            android:id="@+id/appointmentsCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="0 Upcoming"
+                            android:textColor="@color/primary_green"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+                android:textColor="@color/text_secondary" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -139,7 +152,18 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="Bed Management"
-                            android:textAppearance="?attr/textAppearanceTitleMedium" />
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="@color/black" />
+
+                        <TextView
+                            android:id="@+id/bedsAvailable"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="0 Available"
+                            android:textColor="@color/primary_green"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+                android:textColor="@color/text_secondary" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>

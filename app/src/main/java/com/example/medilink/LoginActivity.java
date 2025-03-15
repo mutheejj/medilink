@@ -55,11 +55,11 @@ public class LoginActivity extends AppCompatActivity {
                 @Override
                 public void onSuccess() {
                     runOnUiThread(() -> {
-                        Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
+                        // Clear activity stack and start HomeActivity
                         Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
-                        finish();
+                        finish(); // Finish current activity
                     });
                 }
                 
@@ -68,8 +68,22 @@ public class LoginActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         loginButton.setEnabled(true);
                         loginButton.setText("Sign In");
-                        Toast.makeText(LoginActivity.this, error, Toast.LENGTH_LONG).show();
+                        Toast.makeText(LoginActivity.this, "Invalid email or password", Toast.LENGTH_LONG).show();
                     });
+                }
+                
+                @Override
+                public void onLoading(boolean isLoading) {
+                    runOnUiThread(() -> {
+                        loginButton.setEnabled(!isLoading);
+                        loginButton.setText(isLoading ? "Signing in..." : "Sign In");
+                    });
+                }
+
+                @Override
+                public void onEmailVerificationRequired() {
+                    // Ignore email verification, proceed with login
+                    onSuccess();
                 }
             });
         }

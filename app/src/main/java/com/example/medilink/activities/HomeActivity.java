@@ -27,6 +27,8 @@ import android.text.TextWatcher;
 
 public class HomeActivity extends AppCompatActivity implements CategoriesAdapter.OnCategoryClickListener, DoctorsAdapter.OnDoctorClickListener {
     private TextView textWelcome;
+    private TextView appointmentsCount;
+    private TextView bedsAvailable;
     private RecyclerView categoriesRecyclerView;
     private RecyclerView doctorsRecyclerView;
     private BottomNavigationView bottomNavigationView;
@@ -62,6 +64,8 @@ public class HomeActivity extends AppCompatActivity implements CategoriesAdapter
         appointmentsCard = findViewById(R.id.appointmentsCard);
         bedsCard = findViewById(R.id.bedsCard);
         searchInput = findViewById(R.id.searchInput);
+        appointmentsCount = findViewById(R.id.appointmentsCount);
+        bedsAvailable = findViewById(R.id.bedsAvailable);
 
         setupSearchInput();
     }
@@ -144,6 +148,40 @@ public class HomeActivity extends AppCompatActivity implements CategoriesAdapter
         
         bedsCard.setOnClickListener(v -> 
             startActivity(new Intent(this, BedManagementActivity.class)));
+
+        // Load upcoming appointments count
+        FirebaseDatabase.getInstance().getReference("appointments")
+            .orderByChild("status")
+            .equalTo("upcoming")
+            .addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    long count = dataSnapshot.getChildrenCount();
+                    appointmentsCount.setText(count + " Upcoming");
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    // Handle error
+                }
+            });
+
+        // Load available beds count
+        FirebaseDatabase.getInstance().getReference("beds")
+            .orderByChild("status")
+            .equalTo("available")
+            .addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    long count = dataSnapshot.getChildrenCount();
+                    bedsAvailable.setText(count + " Available");
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    // Handle error
+                }
+            });
     }
 
     private void loadCategories() {
